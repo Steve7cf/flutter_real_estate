@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "706103269017",
+    "project_id": "real-estate-app-7f395",
+    "storage_bucket": "real-estate-app-7f395.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:706103269017:android:61d26acf7312300c8bca08",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbWhDUuB3naATObFJyacEBeXbG-NI_Guo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:706103269017:android:c64a462cd9bdba1d8bca08",
+        "android_client_info": {
+          "package_name": "com.example.estate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbWhDUuB3naATObFJyacEBeXbG-NI_Guo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:706103269017:android:12f54cad96189d318bca08",
+        "android_client_info": {
+          "package_name": "com.example.real_estate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbWhDUuB3naATObFJyacEBeXbG-NI_Guo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
