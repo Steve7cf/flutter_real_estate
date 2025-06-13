@@ -15,7 +15,7 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
-  static FirebaseOptions get currentPlatform {
+  static FirebaseOptions get currentgitPlatform {
     if (kIsWeb) {
       throw UnsupportedError(
         'DefaultFirebaseOptions have not been configured for web - '

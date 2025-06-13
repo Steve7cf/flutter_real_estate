@@ -18,7 +18,7 @@ class HomeBottomNavBar extends StatelessWidget {
             icon: Icons.home_filled,
             label: 'Home',
             isActive: true,
-            onTap: (){},
+            onTap: (){Navigator.pushNamed(context, "/homePage");},
           ),
           NavBarItem(
             icon: Icons.chat,

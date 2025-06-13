@@ -1,4 +1,8 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:real_estate/auth/auth_services.dart';
 
 // Profile Menu Item Widget
 class ProfileMenuItem extends StatelessWidget {
@@ -68,7 +72,8 @@ class ProfileMenuItem extends StatelessWidget {
                 ),
               )
             : null,
-        trailing: trailing ??
+        trailing:
+            trailing ??
             (showArrow
                 ? const Icon(
                     Icons.arrow_forward_ios,
@@ -120,11 +125,7 @@ class ProfileStatsCard extends StatelessWidget {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
+            child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 12),
           Text(
@@ -162,9 +163,59 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
+  bool _isLoading = false;
+
+  // Get current user info
+  User? get currentUser => authService.value.currentUser;
+
+  // Helper method to get display name
+  String get displayName {
+    if (currentUser?.displayName != null && currentUser!.displayName!.isNotEmpty) {
+      return currentUser!.displayName!;
+    }
+    // Fallback: use email prefix or "User"
+    if (currentUser?.email != null) {
+      return currentUser!.email!.split('@')[0];
+    }
+    return 'User';
+  }
+
+  // Helper method to get user email
+  String get userEmail {
+    return currentUser?.email ?? 'No email available';
+  }
+
+  // Helper method to get user photo URL
+  String? get userPhotoURL {
+    return currentUser?.photoURL;
+  }
+
+  // Helper method to check if email is verified
+  bool get isEmailVerified {
+    return currentUser?.emailVerified ?? false;
+  }
+
+  // Helper method to get membership status
+  String get membershipStatus {
+    // You can implement your own logic here
+    // For now, we'll check if email is verified
+    if (isEmailVerified) {
+      return 'Verified Member';
+    }
+    return 'Basic Member';
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Show loading if user is null
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xff35573B),
       body: SafeArea(
@@ -222,10 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 100,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 4,
-                          ),
+                          border: Border.all(color: Colors.white, width: 4),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.2),
@@ -234,11 +282,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
-                        child: const CircleAvatar(
+                        child: CircleAvatar(
                           radius: 48,
-                          backgroundImage: NetworkImage(
-                            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-                          ),
+                          backgroundImage: userPhotoURL != null
+                              ? NetworkImage(userPhotoURL!)
+                              : null,
+                          backgroundColor: const Color(0xFF2E7D32),
+                          child: userPhotoURL == null
+                              ? Text(
+                                  displayName.isNotEmpty 
+                                      ? displayName[0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
                       Positioned(
@@ -246,17 +307,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         right: 0,
                         child: GestureDetector(
                           onTap: () {
-                            print('Edit profile picture');
+                            _showProfilePictureOptions(context);
                           },
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: const Color(0xFF4CAF50),
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
-                              ),
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
                             child: const Icon(
                               Icons.camera_alt,
@@ -272,9 +330,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
 
                   // Name and Email
-                  const Text(
-                    'Mikel Johnson',
-                    style: TextStyle(
+                  Text(
+                    displayName,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -282,30 +340,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    'mikel.johnson@email.com',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          userEmail,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      if (!isEmailVerified) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _sendEmailVerification(),
+                          child: Icon(
+                            Icons.warning,
+                            color: Colors.orange.shade300,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: isEmailVerified 
+                          ? Colors.green.withOpacity(0.2)
+                          : Colors.orange.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      'Premium Member',
-                      style: TextStyle(
+                    child: Text(
+                      membershipStatus,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
+                  
+                  // Email verification warning
+                  if (!isEmailVerified) ...[
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => _sendEmailVerification(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.orange.withOpacity(0.5),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.mail_outline,
+                              color: Colors.orange.shade100,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Verify Email',
+                              style: TextStyle(
+                                color: Colors.orange.shade100,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -315,9 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Container(
                 decoration: const BoxDecoration(
                   color: Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(30),
-                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(top: 24, bottom: 20),
@@ -380,7 +499,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: 'Edit Profile',
                         subtitle: 'Update your personal information',
                         onTap: () {
-                          print('Edit Profile tapped');
+                          _showEditProfileDialog(context);
                         },
                       ),
 
@@ -390,6 +509,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         subtitle: 'Manage your privacy settings',
                         onTap: () {
                           print('Privacy & Security tapped');
+                        },
+                      ),
+
+                      ProfileMenuItem(
+                        icon: Icons.lock_outline,
+                        title: 'Change Password',
+                        subtitle: 'Update your password',
+                        onTap: () {
+                          _showChangePasswordDialog(context);
                         },
                       ),
 
@@ -496,7 +624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ProfileMenuItem(
                         icon: Icons.info_outline,
                         title: 'About',
-                        subtitle: 'Version 2.1.0',
+                        subtitle: 'Version 1.0',
                         onTap: () {
                           print('About tapped');
                         },
@@ -504,12 +632,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 24),
 
+                      // Delete Account Button
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            _showDeleteAccountDialog(context);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red.shade700,
+                            side: BorderSide(color: Colors.red.shade300),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.delete_outline, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Delete Account',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
                       // Logout Button
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: _isLoading ? null : () {
                             _showLogoutDialog(context);
                           },
                           style: ElevatedButton.styleFrom(
@@ -525,23 +688,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                Icons.logout,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Logout',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.logout, size: 20),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Logout',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                     ],
@@ -552,6 +718,275 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _sendEmailVerification() async {
+    try {
+      setState(() => _isLoading = true);
+      await authService.value.sendEmailVerification();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verification email sent! Check your inbox.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showProfilePictureOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Profile Picture',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF2E7D32)),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  print('Take Photo');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF2E7D32)),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  print('Choose from Gallery');
+                },
+              ),
+              if (userPhotoURL != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remove Photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    print('Remove Photo');
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context) {
+    final nameController = TextEditingController(text: displayName);
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text('Edit Profile'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Display Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await authService.value.updateProfile(
+                    displayName: nameController.text.trim(),
+                  );
+                  if (mounted) {
+                    Navigator.pop(context);
+                    setState(() {}); // Refresh the UI
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Profile updated successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text('Change Password'),
+          content: const Text(
+            'We will send a password reset email to your registered email address.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await authService.value.sendPasswordResetEmail(userEmail);
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Password reset email sent!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Send Reset Email'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Delete Account',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await authService.value.deleteAccount();
+                  if (mounted) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/onboarding',
+                      (Route<dynamic> route) => false,
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Delete',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -608,7 +1043,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showLanguageOptions(BuildContext context) {
+    void _showLanguageOptions(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
@@ -626,7 +1061,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
-                title: const Text('Spanish'),
+                title: const Text('Swahili'),
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
@@ -644,7 +1079,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+ void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
@@ -654,9 +1089,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           title: const Text(
             'Logout',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
           content: const Text(
             'Are you sure you want to logout from your account?',
@@ -673,9 +1106,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
+              onPressed: () async {
+                try {
+                  await authService.value.signOut();
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/onboarding',
+                  (Route<dynamic> route) => false, // Clears all routes
+                );
                 print('User logged out');
+                }on FirebaseAuthException catch (e) {
+                  print(e.message);
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -686,9 +1127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: const Text(
                 'Logout',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -696,4 +1135,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
+
 }

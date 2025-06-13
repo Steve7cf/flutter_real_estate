@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:real_estate/models/property.dart';
 
 class PropertyPage extends StatelessWidget {
-  const PropertyPage({super.key, required this.image});
+  final Property property;
 
-  final String image;
+  const PropertyPage({super.key, required this.property});
 
   @override
   Widget build(BuildContext context) {
@@ -12,15 +14,23 @@ class PropertyPage extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 400,
+            expandedHeight: 300,
+            pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    image,
-                    fit: BoxFit.cover,
-                  ),
+                  property.images.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: property.images.first,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, url, error) => const Icon(Icons.error, size: 100),
+                        )
+                      : Container(
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.image_not_supported, size: 100),
+                        ),
                   Positioned(
                     bottom: 20,
                     left: 16,
@@ -29,17 +39,17 @@ class PropertyPage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.5), borderRadius: BorderRadius.circular(15)),
-                          child: Row(
+                            color: Colors.grey.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: const Row(
                             children: [
-                              const Icon(Icons.star, size: 16, color: Colors.amber),
-                              const SizedBox(width: 4),
+                              Icon(Icons.star, size: 16, color: Colors.amber),
+                              SizedBox(width: 4),
                               Text(
                                 "4.9",
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white,
-                                ),
-                              )
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ],
                           ),
                         ),
@@ -47,16 +57,12 @@ class PropertyPage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.5), borderRadius: BorderRadius.circular(15)),
-                          child: Row(
-                            children: [
-                              Text(
-                                "Apartment",
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white,
-                                ),
-                              )
-                            ],
+                            color: Colors.grey.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Text(
+                            property.type != 'N/A' ? property.type : 'Property',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white),
                           ),
                         ),
                       ],
@@ -96,29 +102,38 @@ class PropertyPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Jumeirah Village \nTriangle Dubai",
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Text(
+                          property.title,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Icon(
                         Icons.bookmark,
-                        color: Colors.grey[400]!,
-                      )
+                        color: Colors.grey[400],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Row(
+                  Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.location_on,
                         size: 20,
                         color: Colors.deepOrangeAccent,
                       ),
-                      SizedBox(width: 4),
-                      Text(
-                        "Jumeirah Village Triangle Dubai",
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          property.location,
+                          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -132,34 +147,48 @@ class PropertyPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Introducing a charming 3-bedroom, 2-bathroom single-family home nestled in a peaceful suburban neighborhood. This well-maintained residence offers an inviting open floor plan with abundant natural light throughout.',
+                    property.description,
                     style: theme.textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.king_bed_outlined),
+                      const SizedBox(width: 4),
+                      Text(property.bedrooms),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.bathtub),
+                      const SizedBox(width: 4),
+                      Text(property.bathrooms),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.square_foot),
+                      const SizedBox(width: 4),
+                      Text(property.area),
+                    ],
                   ),
                   TextButton(
                     onPressed: () {},
                     child: Row(
                       children: [
                         Text(
-                          "Show more",
+                          "View Details",
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(
-                          width: 8,
-                        ),
+                        const SizedBox(width: 8),
                         const Icon(
                           Icons.arrow_forward_rounded,
                           size: 24,
                           color: Colors.black,
-                        )
+                        ),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
       floatingActionButton: SizedBox(
@@ -174,11 +203,11 @@ class PropertyPage extends StatelessWidget {
             children: [
               const SizedBox(width: 5),
               Text(
-                  '\$250,000/month',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white
-                  )
+                property.price,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: 12),
               Container(
@@ -187,25 +216,28 @@ class PropertyPage extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(30),
-                  color: Colors.grey.withOpacity(0.4)
+                  color: Colors.grey.withOpacity(0.4),
                 ),
                 child: const Row(
                   children: [
                     Icon(Icons.calendar_month_outlined),
                     SizedBox(width: 10),
-                    Text("June 23 - 27")
+                    Text("June 23 - 27"),
                   ],
                 ),
               ),
-             const SizedBox(width: 8),
+              const SizedBox(width: 8),
               CircleAvatar(
                 radius: 25,
                 backgroundColor: theme.primaryColor,
-                child: const Icon(Icons.arrow_forward_rounded, color: Colors.white,),
-              )
+                child: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                ),
+              ),
             ],
           ),
-        ), 
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );

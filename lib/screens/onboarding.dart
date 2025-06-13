@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:real_estate/screens/home.dart';
 
 
 class OnboardingPage extends StatelessWidget {
@@ -72,7 +71,7 @@ class OnboardingPage extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context)=> const HomePage()));
+                          Navigator.pushNamed(context, "/login");
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: theme.primaryColor,

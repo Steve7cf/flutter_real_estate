@@ -47,52 +47,52 @@ class _MessageScreenState extends State<MessageScreen> {
   final List<Map<String, dynamic>> conversations = const [
     {
       'id': 1,
-      'name': 'Mikel Johnson',
-      'message': 'Hi, are you available for the meeting?',
+      'name': 'Nurdin Hassan',
+      'message': 'oi',
       'time': '15:58',
       'unread': 2,
-      'avatar': 'MJ',
+      'avatar': 'NH',
       'isOnline': true,
       'lastSeen': 'Online'
     },
     {
       'id': 2,
-      'name': 'Jane Doe',
-      'message': 'I have sent you the quarterly reports',
+      'name': 'Steve bazaar',
+      'message': 'niaje',
       'time': '14:30',
       'unread': 0,
-      'avatar': 'JD',
+      'avatar': 'SB',
       'isOnline': false,
       'lastSeen': '2 hours ago'
     },
     {
       'id': 3,
-      'name': 'John Smith',
-      'message': 'Please review the new project proposal',
+      'name': 'Sharrifa kagoda',
+      'message': 'deal done',
       'time': '13:15',
       'unread': 1,
-      'avatar': 'JS',
+      'avatar': 'Sk',
       'isOnline': true,
       'lastSeen': 'Online'
     },
     {
       'id': 4,
-      'name': 'Sarah Wilson',
-      'message': 'Thanks for the update!',
+      'name': 'All samli',
+      'message': 'nakutumia kwenye namba gani?',
       'time': '12:45',
       'unread': 0,
-      'avatar': 'SW',
+      'avatar': 'AS',
       'isOnline': false,
       'lastSeen': '1 day ago'
     },
   ];
 
   final List<Map<String, dynamic>> sampleMessages = const [
-    {'id': 1, 'text': 'Hi, are you available for the meeting?', 'time': '15:58', 'isSent': false},
-    {'id': 2, 'text': 'Yes, I am! What time works for you?', 'time': '15:59', 'isSent': true},
-    {'id': 3, 'text': 'How about 3 PM today? We can discuss the project requirements.', 'time': '16:00', 'isSent': false},
-    {'id': 4, 'text': 'Perfect! Ill prepare the presentation slides.', 'time': '16:01', 'isSent': true},
-    {'id': 5, 'text': 'Great! Looking forward to it. See you at 3 PM.', 'time': '16:02', 'isSent': false},
+    {'id': 1, 'text': 'naomba unitumie picha', 'time': '15:58', 'isSent': false},
+    {'id': 2, 'text': 'account number nimetuma normal', 'time': '15:59', 'isSent': true},
+    {'id': 3, 'text': 'hiyo nyumba ya ununio ipo bado?.', 'time': '16:00', 'isSent': false},
+    {'id': 4, 'text': 'Nimetuma tayari.', 'time': '16:01', 'isSent': true},
+    {'id': 5, 'text': 'hapana bei hyo ipo juu sanaa.', 'time': '16:02', 'isSent': false},
   ];
 
   int? selectedConversationId;
