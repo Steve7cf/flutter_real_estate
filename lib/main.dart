@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:real_estate/auth/auth_layout.dart';
 import 'package:real_estate/firebase_options.dart';
-import 'package:real_estate/models/book_manager.dart';
 import 'package:real_estate/screens/bookmark.dart';
 import 'package:real_estate/screens/forgetPassword.dart';
 import 'package:real_estate/screens/home.dart';
