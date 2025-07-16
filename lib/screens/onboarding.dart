@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
 
@@ -8,7 +7,7 @@ class OnboardingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,10 +21,7 @@ class OnboardingPage extends StatelessWidget {
                       CircleAvatar(
                         radius: 15,
                         backgroundColor: theme.primaryColor,
-                        child: const Icon(
-                          Icons.home,
-                          color: Colors.white,
-                        ),
+                        child: const Icon(Icons.home, color: Colors.white),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -34,7 +30,7 @@ class OnboardingPage extends StatelessWidget {
                           color: theme.primaryColor,
                           fontWeight: FontWeight.bold,
                         ),
-                      )
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -44,10 +40,7 @@ class OnboardingPage extends StatelessWidget {
             Expanded(
               child: Align(
                 alignment: Alignment.centerRight,
-                child: Image.asset(
-                  "assets/onboard.png",
-                  fit: BoxFit.cover,
-                ),
+                child: Image.asset("assets/onboard.png", fit: BoxFit.cover),
               ),
             ),
             Padding(
@@ -64,31 +57,33 @@ class OnboardingPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                      "Find the perfect property with ease. Explore, compare and connect with trusted agents all in one app",
-                      style: theme.textTheme.bodyLarge),
+                    "Find the perfect property with ease. Explore, compare and connect with trusted agents all in one app",
+                    style: theme.textTheme.bodyLarge,
+                  ),
                   const SizedBox(height: 30),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, "/login");
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: const StadiumBorder(),
+                      onPressed: () {
+                        Navigator.pushNamed(context, "/login");
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Text(
+                        "Get Started",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.w500,
                         ),
-                        child: Text(
-                          "Get Started",
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        )),
-                  )
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

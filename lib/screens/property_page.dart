@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:real_estate/models/property.dart';
+import 'dart:io';
+import 'package:real_estate/screens/property_chat_screen.dart';
 
 class PropertyPage extends StatelessWidget {
   final Property property;
@@ -10,26 +12,60 @@ class PropertyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    String postedDate = property.scrapedAt.isNotEmpty
+        ? property.scrapedAt.split('T').first
+        : '';
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: 320,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
                 children: [
                   property.images.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: property.images.first,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                          errorWidget: (context, url, error) => const Icon(Icons.error, size: 100),
+                      ? ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: property.images.length,
+                          itemBuilder: (context, index) {
+                            final img = property.images[index];
+                            if (img.startsWith('/') ||
+                                img.startsWith('file://')) {
+                              return SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                child: Image.file(
+                                  File(img),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.broken_image, size: 100),
+                                ),
+                              );
+                            } else {
+                              return SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                child: CachedNetworkImage(
+                                  imageUrl: img,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error, size: 100),
+                                ),
+                              );
+                            }
+                          },
                         )
                       : Container(
                           color: Colors.grey[300],
-                          child: const Icon(Icons.image_not_supported, size: 100),
+                          height: 320,
+                          width: double.infinity,
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            size: 100,
+                          ),
                         ),
                   Positioned(
                     bottom: 20,
@@ -37,9 +73,12 @@ class PropertyPage extends StatelessWidget {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.5),
+                            color: Colors.grey.withAlpha(128),
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: const Row(
@@ -55,14 +94,19 @@ class PropertyPage extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.5),
+                            color: Colors.grey.withAlpha(128),
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: Text(
                             property.type != 'N/A' ? property.type : 'Property',
-                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ],
@@ -77,19 +121,7 @@ class PropertyPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
             ),
             actions: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.ios_share),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: Icon(
-                  Icons.favorite_outlined,
-                  color: theme.primaryColor,
-                ),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-              ),
+              // Removed like and upload icons
             ],
           ),
           SliverToBoxAdapter(
@@ -98,25 +130,23 @@ class PropertyPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          property.title,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Icon(
-                        Icons.bookmark,
-                        color: Colors.grey[400],
-                      ),
-                    ],
+                  Text(
+                    property.title,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    property.price.startsWith('Tsh')
+                        ? property.price
+                        : 'Tsh ${property.price}',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -130,7 +160,9 @@ class PropertyPage extends StatelessWidget {
                       Expanded(
                         child: Text(
                           property.location,
-                          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -146,10 +178,7 @@ class PropertyPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    property.description,
-                    style: theme.textTheme.bodyLarge,
-                  ),
+                  Text(property.description, style: theme.textTheme.bodyLarge),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -166,24 +195,19 @@ class PropertyPage extends StatelessWidget {
                       Text(property.area),
                     ],
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Row(
-                      children: [
-                        Text(
-                          "View Details",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 24,
-                          color: Colors.black,
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.category),
+                      const SizedBox(width: 4),
+                      Text(property.type),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.calendar_today, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        postedDate.isNotEmpty ? 'Posted on $postedDate' : '',
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -193,50 +217,19 @@ class PropertyPage extends StatelessWidget {
       ),
       floatingActionButton: SizedBox(
         width: 340,
-        height: 70,
+        height: 60,
         child: FloatingActionButton.extended(
-          onPressed: () {},
-          backgroundColor: Colors.black.withAlpha(200),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PropertyChatScreen(property: property),
+              ),
+            );
+          },
+          backgroundColor: theme.primaryColor,
           foregroundColor: Colors.white,
           shape: const StadiumBorder(),
-          label: Row(
-            children: [
-              const SizedBox(width: 5),
-              Text(
-                property.price,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                width: 130,
-                height: 50,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  color: Colors.grey.withOpacity(0.4),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.calendar_month_outlined),
-                    SizedBox(width: 10),
-                    Text("June 23 - 27"),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              CircleAvatar(
-                radius: 25,
-                backgroundColor: theme.primaryColor,
-                child: const Icon(
-                  Icons.arrow_forward_rounded,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
+          label: const Text('Send Message', style: TextStyle(fontSize: 18)),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

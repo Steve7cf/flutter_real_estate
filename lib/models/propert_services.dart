@@ -11,13 +11,11 @@ class PropertyService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        print('Loaded ${data.length} properties from API');
         return data.map((json) => Property.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load properties: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error loading properties: $e');
       throw Exception('Error loading properties: $e');
     }
   }
@@ -134,12 +132,9 @@ class PropertyService {
       ]
       ''';
       final List<dynamic> data = jsonDecode(mockJson);
-      print('Parsed ${data.length} mock properties');
       final properties = data.map((json) => Property.fromJson(json)).toList();
-      print('Converted to ${properties.length} Property objects');
       return properties;
     } catch (e) {
-      print('Error parsing mock properties: $e');
       return [];
     }
   }

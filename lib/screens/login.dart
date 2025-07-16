@@ -17,10 +17,10 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  LoginScreenState createState() => LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(24.0),
@@ -50,11 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppColors.primaryGreen,
                       borderRadius: BorderRadius.circular(50),
                     ),
-                    child: Icon(
-                      Icons.home,
-                      size: 50,
-                      color: Colors.white,
-                    ),
+                    child: Icon(Icons.home, size: 50, color: Colors.white),
                   ),
                 ),
                 SizedBox(height: 40),
@@ -64,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -73,12 +69,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Sign in to your account',
                   style: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 40),
-                
+
                 // Error Message Display
                 if (_errorMessage != null)
                   Container(
@@ -125,11 +121,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Email Field
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.cardColor,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withAlpha(5),
                         blurRadius: 10,
                         offset: Offset(0, 2),
                       ),
@@ -140,36 +136,45 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined, color: AppColors.primaryGreen),
+                      prefixIcon: Icon(
+                        Icons.email_outlined,
+                        color: AppColors.primaryGreen,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: AppColors.cardColor,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      fillColor: Theme.of(context).cardColor,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value)) {
                         return 'Please enter a valid email';
                       }
                       return null;
                     },
-                    onChanged: (_) => _clearError(), // Clear error when user types
+                    onChanged: (_) =>
+                        _clearError(), // Clear error when user types
                   ),
                 ),
                 SizedBox(height: 16),
                 // Password Field
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.cardColor,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withAlpha(5),
                         blurRadius: 10,
                         offset: Offset(0, 2),
                       ),
@@ -180,10 +185,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: !_isPasswordVisible,
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outlined, color: AppColors.primaryGreen),
+                      prefixIcon: Icon(
+                        Icons.lock_outlined,
+                        color: AppColors.primaryGreen,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          _isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                           color: AppColors.primaryGreen,
                         ),
                         onPressed: () {
@@ -197,8 +207,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: AppColors.cardColor,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      fillColor: Theme.of(context).cardColor,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -206,7 +219,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       return null;
                     },
-                    onChanged: (_) => _clearError(), // Clear error when user types
+                    onChanged: (_) =>
+                        _clearError(), // Clear error when user types
                   ),
                 ),
                 SizedBox(height: 16),
@@ -239,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryGreen.withOpacity(0.3),
+                        color: AppColors.primaryGreen.withAlpha(77),
                         blurRadius: 10,
                         offset: Offset(0, 4),
                       ),
@@ -273,7 +287,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text(
                       "Don't have an account? ",
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                     ),
                     TextButton(
                       onPressed: () {
@@ -325,16 +341,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Authenticate with Firebase using your AuthService
         await authService.value.signInWithEmailAndPassword(
-          email: email, 
-          password: password
+          email: email,
+          password: password,
         );
 
         // Navigate to home screen using named route
         if (mounted) {
           Navigator.pushNamedAndRemoveUntil(
             context,
-            '/homePage',  // Your home route name
-            (route) => false,  // Clear all previous routes
+            '/homePage', // Your home route name
+            (route) => false, // Clear all previous routes
           );
         }
       } catch (e) {

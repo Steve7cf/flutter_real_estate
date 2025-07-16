@@ -6,6 +6,8 @@ import 'package:real_estate/models/property_card.dart';
 import 'package:real_estate/screens/property_page.dart';
 import 'package:real_estate/widgets/bottom_nav.dart';
 import 'package:real_estate/models/property.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,6 +19,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Property> properties = [];
   List<Property> filteredProperties = [];
+  List<Property> userProperties = [];
   bool isLoading = true;
   String searchQuery = '';
   String? selectedType;
@@ -32,6 +35,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _loadProperties();
     _getCurrentLocation();
+    _loadUserListings();
   }
 
   @override
@@ -42,10 +46,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled()
-          .timeout(const Duration(seconds: 5), onTimeout: () {
-        throw Exception('Location service check timed out');
-      });
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          throw Exception('Location service check timed out');
+        },
+      );
 
       if (!serviceEnabled) {
         if (mounted) {
@@ -54,7 +60,6 @@ class _HomePageState extends State<HomePage> {
             isLocationLoading = false;
           });
         }
-        print('Error getting location: Location services disabled');
         return;
       }
 
@@ -68,7 +73,6 @@ class _HomePageState extends State<HomePage> {
               isLocationLoading = false;
             });
           }
-          print('Error getting location: Permission denied');
           return;
         }
       }
@@ -80,22 +84,29 @@ class _HomePageState extends State<HomePage> {
             isLocationLoading = false;
           });
         }
-        print('Error getting location: Permission denied forever');
         return;
       }
 
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      ).timeout(const Duration(seconds: 10), onTimeout: () {
-        throw Exception('Location request timed out');
-      });
+      Position position =
+          await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          ).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception('Location request timed out');
+            },
+          );
 
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      ).timeout(const Duration(seconds: 10), onTimeout: () {
-        throw Exception('Geocoding request timed out');
-      });
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(
+            position.latitude,
+            position.longitude,
+          ).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception('Geocoding request timed out');
+            },
+          );
 
       if (placemarks.isEmpty) {
         throw Exception('No address found for coordinates');
@@ -115,9 +126,7 @@ class _HomePageState extends State<HomePage> {
           isLocationLoading = false;
         });
       }
-      print('Location fetched: $address');
     } catch (e) {
-      print('Error getting location: $e');
       if (mounted) {
         setState(() {
           currentLocation = 'Failed to get location. Tap to retry.';
@@ -130,10 +139,6 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadProperties() async {
     try {
       final loadedProperties = await PropertyService.loadMockProperties();
-      print('Loaded ${loadedProperties.length} properties:');
-      for (var property in loadedProperties) {
-        print(' - ${property.title}: ${property.images.isNotEmpty ? property.images.first : 'No image'}');
-      }
       if (mounted) {
         setState(() {
           properties = loadedProperties;
@@ -141,9 +146,7 @@ class _HomePageState extends State<HomePage> {
           isLoading = false;
         });
       }
-      print('Set state: properties=${properties.length}, filteredProperties=${filteredProperties.length}');
     } catch (e) {
-      print('Error loading properties: $e');
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -155,13 +158,42 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _loadUserListings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('user_listings') ?? [];
+    setState(() {
+      userProperties = list.map((e) {
+        final map = jsonDecode(e) as Map<String, dynamic>;
+        // Ensure all fields are present for Property
+        return Property(
+          id: map['id'] ?? '',
+          title: map['title'] ?? '',
+          price: map['price'] ?? '',
+          location: map['location'] ?? '',
+          description: map['description'] ?? '',
+          bedrooms: map['bedrooms'] ?? '',
+          bathrooms: map['bathrooms'] ?? '',
+          area: map['area'] ?? '',
+          type: map['type'] ?? '',
+          url: map['url'] ?? '',
+          scrapedAt: map['scraped_at'] ?? '',
+          images: (map['images'] is List)
+              ? List<String>.from(map['images'])
+              : (map['imagePath'] != null ? [map['imagePath']] : []),
+        );
+      }).toList();
+    });
+  }
+
   List<Property> _applyFiltersAndSort(List<Property> props) {
     var result = props.where((property) {
-      final matchesSearch = searchQuery.isEmpty ||
+      final matchesSearch =
+          searchQuery.isEmpty ||
           property.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
           property.location.toLowerCase().contains(searchQuery.toLowerCase());
       final matchesType = selectedType == null || property.type == selectedType;
-      final matchesLocation = selectedLocation == null || property.location == selectedLocation;
+      final matchesLocation =
+          selectedLocation == null || property.location == selectedLocation;
       return matchesSearch && matchesType && matchesLocation;
     }).toList();
 
@@ -176,8 +208,12 @@ class _HomePageState extends State<HomePage> {
         result.sort((a, b) {
           if (a.price == 'Offers are invited') return 1;
           if (b.price == 'Offers are invited') return -1;
-          final aPrice = double.tryParse(a.price.replaceAll(RegExp(r'[^\d]'), '')) ?? double.infinity;
-          final bPrice = double.tryParse(b.price.replaceAll(RegExp(r'[^\d]'), '')) ?? double.infinity;
+          final aPrice =
+              double.tryParse(a.price.replaceAll(RegExp(r'[^\d]'), '')) ??
+              double.infinity;
+          final bPrice =
+              double.tryParse(b.price.replaceAll(RegExp(r'[^\d]'), '')) ??
+              double.infinity;
           return aPrice.compareTo(bPrice);
         });
         break;
@@ -185,8 +221,12 @@ class _HomePageState extends State<HomePage> {
         result.sort((a, b) {
           if (a.price == 'Offers are invited') return 1;
           if (b.price == 'Offers are invited') return -1;
-          final aPrice = double.tryParse(a.price.replaceAll(RegExp(r'[^\d]'), '')) ?? double.infinity;
-          final bPrice = double.tryParse(b.price.replaceAll(RegExp(r'[^\d]'), '')) ?? double.infinity;
+          final aPrice =
+              double.tryParse(a.price.replaceAll(RegExp(r'[^\d]'), '')) ??
+              double.infinity;
+          final bPrice =
+              double.tryParse(b.price.replaceAll(RegExp(r'[^\d]'), '')) ??
+              double.infinity;
           return bPrice.compareTo(aPrice);
         });
         break;
@@ -199,7 +239,6 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         searchQuery = query;
         filteredProperties = _applyFiltersAndSort(properties);
-        print('Search query: "$query", filteredProperties=${filteredProperties.length}');
       });
     }
   }
@@ -214,7 +253,10 @@ class _HomePageState extends State<HomePage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final types = properties.map((p) => p.type).toSet().toList();
-            final locations = properties.map((p) => p.location).toSet().toList();
+            final locations = properties
+                .map((p) => p.location)
+                .toSet()
+                .toList();
             return AlertDialog(
               title: const Text('Filter & Sort'),
               content: SingleChildScrollView(
@@ -222,33 +264,62 @@ class _HomePageState extends State<HomePage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: 'Property Type'),
+                      decoration: const InputDecoration(
+                        labelText: 'Property Type',
+                      ),
                       value: tempType,
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('All Types')),
-                        ...types.map((type) => DropdownMenuItem(value: type, child: Text(type))),
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('All Types'),
+                        ),
+                        ...types.map(
+                          (type) =>
+                              DropdownMenuItem(value: type, child: Text(type)),
+                        ),
                       ],
-                      onChanged: (value) => setDialogState(() => tempType = value),
+                      onChanged: (value) =>
+                          setDialogState(() => tempType = value),
                     ),
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(labelText: 'Location'),
                       value: tempLocation,
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('All Locations')),
-                        ...locations.map((loc) => DropdownMenuItem(value: loc, child: Text(loc))),
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('All Locations'),
+                        ),
+                        ...locations.map(
+                          (loc) =>
+                              DropdownMenuItem(value: loc, child: Text(loc)),
+                        ),
                       ],
-                      onChanged: (value) => setDialogState(() => tempLocation = value),
+                      onChanged: (value) =>
+                          setDialogState(() => tempLocation = value),
                     ),
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(labelText: 'Sort By'),
                       value: tempSortBy,
                       items: const [
-                        DropdownMenuItem(value: 'title_asc', child: Text('Title A-Z')),
-                        DropdownMenuItem(value: 'title_desc', child: Text('Title Z-A')),
-                        DropdownMenuItem(value: 'price_asc', child: Text('Price Low-High')),
-                        DropdownMenuItem(value: 'price_desc', child: Text('Price High-Low')),
+                        DropdownMenuItem(
+                          value: 'title_asc',
+                          child: Text('Title A-Z'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'title_desc',
+                          child: Text('Title Z-A'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'price_asc',
+                          child: Text('Price Low-High'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'price_desc',
+                          child: Text('Price High-Low'),
+                        ),
                       ],
-                      onChanged: (value) => setDialogState(() => tempSortBy = value!),
+                      onChanged: (value) =>
+                          setDialogState(() => tempSortBy = value!),
                     ),
                   ],
                 ),
@@ -301,14 +372,22 @@ class _HomePageState extends State<HomePage> {
         String? tempLocation = selectedManualLocation;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final locations = properties.map((p) => p.location).toSet().toList();
+            final locations = properties
+                .map((p) => p.location)
+                .toSet()
+                .toList();
             return AlertDialog(
               title: const Text('Select Location'),
               content: DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Location'),
                 value: tempLocation,
-                items: locations.map((loc) => DropdownMenuItem(value: loc, child: Text(loc))).toList(),
-                onChanged: (value) => setDialogState(() => tempLocation = value),
+                items: locations
+                    .map(
+                      (loc) => DropdownMenuItem(value: loc, child: Text(loc)),
+                    )
+                    .toList(),
+                onChanged: (value) =>
+                    setDialogState(() => tempLocation = value),
               ),
               actions: [
                 TextButton(
@@ -367,7 +446,10 @@ class _HomePageState extends State<HomePage> {
                             color: theme.primaryColor,
                             border: Border.all(color: Colors.white),
                           ),
-                          child: const Icon(Icons.home_outlined, color: Colors.white),
+                          child: const Icon(
+                            Icons.home_outlined,
+                            color: Colors.white,
+                          ),
                         ),
                         const Spacer(),
                         GestureDetector(
@@ -393,7 +475,7 @@ class _HomePageState extends State<HomePage> {
                               Text(
                                 "Current location",
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withAlpha(179),
                                 ),
                               ),
                               Row(
@@ -407,18 +489,27 @@ class _HomePageState extends State<HomePage> {
                                             color: Colors.white,
                                           ),
                                         )
-                                      : const Icon(Icons.location_on, color: Colors.white, size: 18),
+                                      : const Icon(
+                                          Icons.location_on,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
                                   const SizedBox(width: 4),
                                   SizedBox(
                                     width: 120,
                                     child: Text(
                                       selectedManualLocation ?? currentLocation,
-                                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(color: Colors.white),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+                                  const Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                 ],
                               ),
                             ],
@@ -427,10 +518,15 @@ class _HomePageState extends State<HomePage> {
                         const Spacer(),
                         IconButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, "/notifications");
+                            Navigator.pushNamed(context, "/message");
                           },
-                          icon: const Icon(Icons.notifications_none, color: Colors.white),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.4)),
+                          icon: const Icon(
+                            Icons.chat_bubble_outline,
+                            color: Colors.white,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withAlpha(102),
+                          ),
                         ),
                       ],
                     ),
@@ -444,7 +540,7 @@ class _HomePageState extends State<HomePage> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.4),
+                              color: theme.cardColor.withAlpha(102),
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Row(
@@ -456,8 +552,11 @@ class _HomePageState extends State<HomePage> {
                                     onChanged: _updateSearchQuery,
                                     style: const TextStyle(color: Colors.white),
                                     decoration: InputDecoration(
-                                      hintText: 'Search by title or location...',
-                                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                                      hintText:
+                                          'Search by title or location...',
+                                      hintStyle: TextStyle(
+                                        color: Colors.white.withAlpha(179),
+                                      ),
                                       border: InputBorder.none,
                                     ),
                                   ),
@@ -468,8 +567,13 @@ class _HomePageState extends State<HomePage> {
                         ),
                         IconButton(
                           onPressed: _showFilterSortDialog,
-                          icon: const Icon(Icons.filter_list, color: Colors.white),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.4)),
+                          icon: const Icon(
+                            Icons.filter_list,
+                            color: Colors.white,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withAlpha(102),
+                          ),
                         ),
                       ],
                     ),
@@ -477,8 +581,8 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 24),
                   Expanded(
                     child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: theme.scaffoldBackgroundColor,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(30),
                           topRight: Radius.circular(30),
@@ -486,133 +590,203 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: isLoading
                           ? const Center(child: CircularProgressIndicator())
-                          : filteredProperties.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.search_off, size: 50, color: Colors.grey),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        searchQuery.isEmpty
-                                            ? 'No properties available'
-                                            : 'No results for "$searchQuery"',
-                                        style: theme.textTheme.titleMedium,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton(
-                                        onPressed: _loadProperties,
-                                        child: const Text('Retry'),
-                                      ),
-                                    ],
+                          : filteredProperties.isEmpty && userProperties.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.search_off,
+                                    size: 50,
+                                    color: Colors.grey,
                                   ),
-                                )
-                              : RefreshIndicator(
-                                  onRefresh: _loadProperties,
-                                  child: ListView(
-                                    padding: const EdgeInsets.all(16),
-                                    children: [
-                                      Container(
-                                        height: 120,
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomLeft,
-                                            stops: [0.4, 1],
-                                            colors: [Color(0xff35573b), Colors.grey],
-                                          ),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                  children: [
-                                                    Text(
-                                                      'GET YOUR 10%\nCASHBACK',
-                                                      style: theme.textTheme.titleLarge?.copyWith(
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      '*Expires 31 Sept 2025',
-                                                      style: theme.textTheme.bodySmall?.copyWith(
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            Image.asset(
-                                              "assets/house.png",
-                                              width: 130,
-                                              fit: BoxFit.cover,
-                                            ),
-                                            const SizedBox(width: 20),
-                                          ],
-                                        ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    searchQuery.isEmpty
+                                        ? 'No properties available'
+                                        : 'No results for "$searchQuery"',
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: _loadProperties,
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: () async {
+                                await _loadProperties();
+                                await _loadUserListings();
+                              },
+                              child: ListView(
+                                padding: const EdgeInsets.all(16),
+                                children: [
+                                  // Poster/banner first
+                                  Container(
+                                    height: 120,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomLeft,
+                                        stops: [0.4, 1],
+                                        colors: [
+                                          Color(0xff35573b),
+                                          Colors.grey,
+                                        ],
                                       ),
-                                      const SizedBox(height: 24),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'Recommended for you',
-                                            style: theme.textTheme.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          TextButton(
-                                            onPressed: _showFilterSortDialog,
-                                            child: Row(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(10.0),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
                                               children: [
                                                 Text(
-                                                  'Filter & Sort',
-                                                  style: theme.textTheme.titleSmall,
+                                                  'GET YOUR 10%\nCASHBACK',
+                                                  style: theme
+                                                      .textTheme
+                                                      .titleLarge
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
                                                 ),
-                                                const Icon(Icons.keyboard_arrow_down),
+                                                Text(
+                                                  '*Expires 31 Sept 2025',
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: Colors.white,
+                                                      ),
+                                                ),
                                               ],
                                             ),
                                           ),
-                                        ],
+                                        ),
+                                        Image.asset(
+                                          "assets/house.png",
+                                          width: 130,
+                                          fit: BoxFit.cover,
+                                        ),
+                                        const SizedBox(width: 20),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  // User listings below poster/banner
+                                  if (userProperties.isNotEmpty) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 8.0,
+                                        left: 4,
                                       ),
-                                      const SizedBox(height: 16),
-                                      ...filteredProperties.map((property) => Padding(
-                                            padding: const EdgeInsets.only(top: 12.0),
-                                            child: PropertyCard(
-                                              property: property,
-                                              onTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => PropertyPage(
+                                      child: Text(
+                                        'Your Listings',
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ),
+                                    ...userProperties.map(
+                                      (property) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 12.0,
+                                        ),
+                                        child: PropertyCard(
+                                          property: property,
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    PropertyPage(
                                                       property: property,
                                                     ),
-                                                  ),
-                                                );
-                                              },
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                  ],
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Recommended for you',
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
                                             ),
-                                          )),
+                                      ),
+                                      TextButton(
+                                        onPressed: _showFilterSortDialog,
+                                        child: Row(
+                                          children: [
+                                            Text(
+                                              'Filter & Sort',
+                                              style: theme.textTheme.titleSmall,
+                                            ),
+                                            const Icon(
+                                              Icons.keyboard_arrow_down,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                ),
+                                  const SizedBox(height: 16),
+                                  ...filteredProperties.map(
+                                    (property) => Padding(
+                                      padding: const EdgeInsets.only(top: 12.0),
+                                      child: PropertyCard(
+                                        property: property,
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  PropertyPage(
+                                                    property: property,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             bottom: 50,
             left: 80,
             right: 80,
-            child: HomeBottomNavBar(),
+            child: HomeBottomNavBar(
+              onProfileReturn: () async {
+                await _loadUserListings();
+                await _loadProperties();
+              },
+            ),
           ),
         ],
       ),

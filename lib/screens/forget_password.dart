@@ -20,67 +20,65 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-Future<void> _resetPassword() async {
-  if (_formKey.currentState!.validate()) {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _resetPassword() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
 
-    try {
-      final email = _emailController.text.trim();
-      
-      // Call Firebase password reset
-      await authService.value.sendPasswordResetEmail(email);
+      try {
+        final email = _emailController.text.trim();
 
-      if (mounted) {
-        // Show success dialog
-        _showSuccessDialog();
-        
-        // Optional: Navigate back to login after successful reset
-        Navigator.pop(context);
-      }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_getErrorMessage(e)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('An unexpected error occurred'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        // Call Firebase password reset
+        await authService.value.sendPasswordResetEmail(email);
+
+        if (mounted) {
+          // Show success dialog
+          _showSuccessDialog();
+
+          // Optional: Navigate back to login after successful reset
+          Navigator.pop(context);
+        }
+      } on FirebaseAuthException catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_getErrorMessage(e)),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('An unexpected error occurred'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
-}
 
-String _getErrorMessage(FirebaseAuthException e) {
-  switch (e.code) {
-    case 'invalid-email':
-      return 'The email address is invalid';
-    case 'user-not-found':
-      return 'No user found with this email';
-    case 'too-many-requests':
-      return 'Too many requests. Try again later.';
-    default:
-      return e.message ?? 'Password reset failed';
+  String _getErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-email':
+        return 'The email address is invalid';
+      case 'user-not-found':
+        return 'No user found with this email';
+      case 'too-many-requests':
+        return 'Too many requests. Try again later.';
+      default:
+        return e.message ?? 'Password reset failed';
+    }
   }
-}
-
-
 
   void _showSuccessDialog() {
     showDialog(
@@ -98,7 +96,7 @@ String _getErrorMessage(FirebaseAuthException e) {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4A7C59).withOpacity(0.1),
+                  color: const Color(0xFF4A7C59).withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -120,10 +118,7 @@ String _getErrorMessage(FirebaseAuthException e) {
               Text(
                 'We\'ve sent a password reset link to ${_emailController.text}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7B7C),
-                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7B7C)),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -143,10 +138,7 @@ String _getErrorMessage(FirebaseAuthException e) {
                   ),
                   child: const Text(
                     'Back to Login',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -167,7 +159,7 @@ String _getErrorMessage(FirebaseAuthException e) {
         leading: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Theme.of(context).cardColor.withAlpha(25),
             shape: BoxShape.circle,
           ),
           child: IconButton(
@@ -201,21 +193,23 @@ String _getErrorMessage(FirebaseAuthException e) {
                 'Don\'t worry! Enter your email address and we\'ll send you a link to reset your password.',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.color?.withAlpha(128),
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: 60),
-              
+
               // Form Card
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withAlpha(25),
                       blurRadius: 20,
                       offset: const Offset(0, 4),
                     ),
@@ -232,7 +226,7 @@ String _getErrorMessage(FirebaseAuthException e) {
                         height: 80,
                         margin: const EdgeInsets.only(bottom: 24),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4A7C59).withOpacity(0.1),
+                          color: const Color(0xFF4A7C59).withAlpha(25),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -241,7 +235,7 @@ String _getErrorMessage(FirebaseAuthException e) {
                           size: 40,
                         ),
                       ),
-                      
+
                       // Email Input
                       const Text(
                         'Email Address',
@@ -259,16 +253,16 @@ String _getErrorMessage(FirebaseAuthException e) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your email';
                           }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value)) {
                             return 'Please enter a valid email';
                           }
                           return null;
                         },
                         decoration: InputDecoration(
                           hintText: 'Enter your email address',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFF9CA3AF),
-                          ),
+                          hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
                           prefixIcon: const Icon(
                             Icons.email_outlined,
                             color: Color(0xFF6B7B7C),
@@ -288,9 +282,7 @@ String _getErrorMessage(FirebaseAuthException e) {
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.red,
-                            ),
+                            borderSide: const BorderSide(color: Colors.red),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -306,7 +298,7 @@ String _getErrorMessage(FirebaseAuthException e) {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      
+
                       // Reset Password Button
                       ElevatedButton(
                         onPressed: _isLoading ? null : _resetPassword,
@@ -336,7 +328,7 @@ String _getErrorMessage(FirebaseAuthException e) {
                               ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Back to Login
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -366,22 +358,28 @@ String _getErrorMessage(FirebaseAuthException e) {
                 ),
               ),
               const SizedBox(height: 40),
-              
+
               // Additional Info
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Theme.of(
+                    context,
+                  ).scaffoldBackgroundColor.withAlpha(25),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Theme.of(
+                      context,
+                    ).scaffoldBackgroundColor.withAlpha(51),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.info_outline,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodyLarge?.color?.withAlpha(128),
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -390,7 +388,9 @@ String _getErrorMessage(FirebaseAuthException e) {
                         'If you don\'t receive an email within 5 minutes, check your spam folder or try again.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.color?.withAlpha(128),
                         ),
                       ),
                     ),
