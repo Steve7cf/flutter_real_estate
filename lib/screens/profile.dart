@@ -173,6 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   List<Property> userListings = [];
   int bookmarkCount = 0;
+  List<Map<String, dynamic>> boughtProperties = [];
 
   // Get current user info
   User? get currentUser => authService.value.currentUser;
@@ -221,6 +222,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserListings();
     _loadBookmarkCount();
     _loadNotificationPref();
+    _loadBoughtProperties();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadBoughtProperties();
+    _loadUserListings();
   }
 
   Future<void> _loadUserListings() async {
@@ -265,6 +274,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               : (map['imagePath'] != null ? [map['imagePath']] : []),
         );
       }).toList();
+    });
+  }
+
+  Future<void> _loadBoughtProperties() async {
+    final prefs = await SharedPreferences.getInstance();
+    final boughtList = prefs.getStringList('bought_properties') ?? [];
+    setState(() {
+      boughtProperties = boughtList
+          .map((e) {
+            try {
+              return Map<String, dynamic>.from(jsonDecode(e));
+            } catch (_) {
+              return <String, dynamic>{};
+            }
+          })
+          .where((e) => e.isNotEmpty)
+          .toList();
     });
   }
 
@@ -604,6 +630,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
+
+                      if (boughtProperties.isNotEmpty) ...[
+                        const SizedBox(height: 32),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Bought Properties',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: boughtProperties.length,
+                          itemBuilder: (context, index) {
+                            final prop = boughtProperties[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: ListTile(
+                                leading:
+                                    (prop['images'] != null &&
+                                        prop['images'].toString().isNotEmpty)
+                                    ? Image.network(
+                                        prop['images']
+                                            .toString()
+                                            .split(',')
+                                            .first
+                                            .trim(),
+                                        width: 56,
+                                        height: 56,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        width: 56,
+                                        height: 56,
+                                        color: Colors.grey[300],
+                                        child: const Icon(
+                                          Icons.image,
+                                          size: 28,
+                                        ),
+                                      ),
+                                title: Text(prop['title'] ?? 'Property'),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(prop['price'] ?? ''),
+                                    if (prop['payment_method'] != null)
+                                      Text(
+                                        'Paid with: ${prop['payment_method']}',
+                                      ),
+                                    if (prop['payment_time'] != null)
+                                      Text('Date: ${prop['payment_time']}'),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 32),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'No properties bought yet.',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ),
+                      ],
 
                       if (userListings.isNotEmpty) ...[
                         const SizedBox(height: 32),

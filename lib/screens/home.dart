@@ -139,10 +139,26 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadProperties() async {
     try {
       final loadedProperties = await PropertyService.loadMockProperties();
+      final prefs = await SharedPreferences.getInstance();
+      final boughtList = prefs.getStringList('bought_properties') ?? [];
+      final paidList = prefs.getStringList('paid_properties') ?? [];
+      final boughtIds = <String>{};
+      for (final item in boughtList) {
+        try {
+          final map = jsonDecode(item) as Map<String, dynamic>;
+          if (map['id'] != null) boughtIds.add(map['id'].toString());
+        } catch (_) {}
+      }
+      for (final id in paidList) {
+        boughtIds.add(id);
+      }
+      final filtered = loadedProperties
+          .where((p) => !boughtIds.contains(p.id))
+          .toList();
       if (mounted) {
         setState(() {
-          properties = loadedProperties;
-          filteredProperties = _applyFiltersAndSort(loadedProperties);
+          properties = filtered;
+          filteredProperties = _applyFiltersAndSort(filtered);
           isLoading = false;
         });
       }
@@ -705,8 +721,8 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         child: PropertyCard(
                                           property: property,
-                                          onTap: () {
-                                            Navigator.push(
+                                          onTap: () async {
+                                            final result = await Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
@@ -715,6 +731,10 @@ class _HomePageState extends State<HomePage> {
                                                     ),
                                               ),
                                             );
+                                            if (result == true) {
+                                              await _loadProperties();
+                                              await _loadUserListings();
+                                            }
                                           },
                                         ),
                                       ),
